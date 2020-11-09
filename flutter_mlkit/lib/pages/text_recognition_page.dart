@@ -1,8 +1,9 @@
 import 'dart:io';
 import 'package:firebase_ml_vision/firebase_ml_vision.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_mlkit/models/location.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 class TextRecognitionPage extends StatefulWidget {
   @override
@@ -15,6 +16,8 @@ class _TextRecognitionPageState extends State<TextRecognitionPage> {
   PickedFile pickedImage;
   bool hasLoaded = false;
   String printText = '';
+
+  Location location;
 
   @override
   void initState() {
@@ -66,13 +69,19 @@ class _TextRecognitionPageState extends State<TextRecognitionPage> {
                   : Container(),
               Text(printText),
               RaisedButton(
-                child: Text("buscar"),
+                child: Text("ler texto"),
                 onPressed: () async {
                   String label = await readText();
-                  sendNumber(printText);
                   setState(() {
                     printText = label.replaceAll(new RegExp(r'[^0-9]'), '');
                   });
+                },
+              ),
+              SizedBox(height: 8),
+              RaisedButton(
+                child: Text("mais info"),
+                onPressed: () {
+                  redirect();
                 },
               ),
               SizedBox(height: 20),
@@ -103,12 +112,14 @@ class _TextRecognitionPageState extends State<TextRecognitionPage> {
     return text;
   }
 
-  Future sendNumber(String text) async {
-    if (printText != null) {
-      return await http.post(
-          'http://www.pallate.com.br/ubiqua/consulta.asp?numero=*$printText*&cidade=Belo%20Horizonte');
+  Future redirect() async {
+    var response =
+        await 'http://www.pallate.com.br/ubiqua/consulta.asp?numero=${printText}&cidade=Belo%20Horizonte';
+
+    if (await canLaunch(response)) {
+      await launch(response);
     } else {
-      return "Texto não encontrado";
+      throw 'Could not launch $response';
     }
   }
 
